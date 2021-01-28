@@ -1,0 +1,100 @@
+{
+  "name": "snort3-build-tools",
+  "displayName": "Snort3 Build Tools",
+  "description": "Configure and Build snort3 from Visual Studio Code",
+  "icon": "img/snort_configure_logo.png",
+  "author": "Dipto Pandit <dipandit@cisco.com>",
+  "publisher": "diptopandit",
+  "version": "0.0.1",
+  "license": "MIT",
+  "homepage": "https://github.com/diptopandit/vscode-snort3-test-adapter",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/diptopandit/vscode-snort3-test-adapter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/diptopandit/vscode-snort3-test-adapter/issues"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "build",
+    "building",
+    "snort3"
+  ],
+  "main": "out/main.js",
+  "enableProposedApi": true,
+  "scripts": {
+    "clean": "rimraf out *.vsix",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "rebuild": "npm run clean && npm run build",
+    "package": "vsce package",
+    "publish": "vsce publish -o release"
+  },
+  "dependencies": {
+    "tslib": "^1.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.22",
+    "@types/vscode": "~1.23.0",
+    "typescript": "^3.5.3",
+    "vsce": "^1.65.0"
+  },
+  "engines": {
+    "vscode": "^1.23.0"
+  },
+  "extensionDependencies": [],
+  "activationEvents": [
+    "workspaceContains:snort.pc.in"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "snort3BuildTools.configure",
+        "title": "configure snort3",
+        "category": "build",
+        "icon": {
+          "light": "path/to/light/icon.svg",
+          "dark": "path/to/dark/icon.svg"
+        }
+      },
+      {
+        "command": "snort3BuildTools.build",
+        "title": "build snort3",
+        "category": "build",
+        "icon": {
+          "light": "path/to/light/icon.svg",
+          "dark": "path/to/dark/icon.svg"
+        }
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Snort3 Build Tools",
+      "properties": {
+        "snort3BuildTools.sf_prefix_snort3": {
+          "description": "absolute path to the snort install directory",
+          "type": "string",
+          "scope": "resource"
+        },
+        "snort3BuildTools.dependencies": {
+          "description": "absolute path to the dependencies directory",
+          "type": "string",
+          "scope": "resource"
+        },
+        "snort3BuildTools.concurrency": {
+          "description": "number of concurrent jobs (defaults to number of processors)",
+          "type": "integer",
+          "scope": "resource"
+        },
+        "snort3BuildTools.snort_build_dir": {
+          "description": "absolute path to snort build working directory",
+          "type":"string",
+          "scope": "resource"
+        }
+      }
+    }
+  }
+}
