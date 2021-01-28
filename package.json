@@ -5,15 +5,15 @@
   "icon": "img/snort_configure_logo.png",
   "author": "Dipto Pandit <dipandit@cisco.com>",
   "publisher": "diptopandit",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "license": "MIT",
-  "homepage": "https://github.com/diptopandit/vscode-snort3-test-adapter",
+  "homepage": "https://github.com/diptopandit/vscode-snort3-build-tools",
   "repository": {
     "type": "git",
-    "url": "https://github.com/diptopandit/vscode-snort3-test-adapter.git"
+    "url": "https://github.com/diptopandit/vscode-snort3-build-tools.git"
   },
   "bugs": {
-    "url": "https://github.com/diptopandit/vscode-snort3-test-adapter/issues"
+    "url": "https://github.com/diptopandit/vscode-snort3-build-tools/issues"
   },
   "categories": [
     "Other"
@@ -24,7 +24,6 @@
     "snort3"
   ],
   "main": "out/main.js",
-  "enableProposedApi": true,
   "scripts": {
     "clean": "rimraf out *.vsix",
     "build": "tsc",
@@ -91,7 +90,7 @@
         },
         "snort3BuildTools.snort_build_dir": {
           "description": "absolute path to snort build working directory",
-          "type":"string",
+          "type": "string",
           "scope": "resource"
         }
       }

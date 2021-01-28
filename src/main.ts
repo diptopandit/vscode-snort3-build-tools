@@ -47,7 +47,7 @@ export async function activate(context: vscode.ExtensionContext) {
     myStatusBarItems[1].text=`$(tools)`;
     myStatusBarItems[1].tooltip='Configure snort3';
     myStatusBarItems[1].command='snort3BuildTools.configure';
-    myStatusBarItems[2].text = '$(gear)';
+    myStatusBarItems[2].text = '$(settings-gear)';
     myStatusBarItems[2].tooltip='Build snort3';
     myStatusBarItems[2].command='snort3BuildTools.build'
     myStatusBarItems[3].text=`]`;

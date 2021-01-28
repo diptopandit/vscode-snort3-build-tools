@@ -39,7 +39,7 @@ The dependency directory structure should be like below:
 ```
 You should now see the below items in status bar:
 
-![status bar items](img/status-items.png)
+![status bar items](https://raw.githubusercontent.com/diptopandit/vscode-snort3-build-tools/main/img/status-items.png)
 
 Clicking on the icons will trigger the below commands respectively. The icons will animate when the task is in progress.
 
@@ -49,6 +49,6 @@ This extension provides two commands:
 * build: configure snort3
 * build: build snort3
 
-![registered commands](img/commands.png)
+![registered commands](https://raw.githubusercontent.com/diptopandit/vscode-snort3-build-tools/main/img/commands.png)
 
 Contributions are welcome
