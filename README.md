@@ -4,17 +4,19 @@ Snort3 Build Tools is a visual studio code extension that lets you configure and
 
 ## Setup
 
-* install the [Snort3 Test Explorer](https://marketplace.visualstudio.com/items?itemName=diptopandit.snort3-test-adapter) extension
+* install the [Snort3 Build Tools](https://marketplace.visualstudio.com/items?itemName=diptopandit.snort3-test-adapter) extension
 * open any workspace in visual studio code that has snort3 folder.
 
 ## Configuration
 
 * open extension settings 
-* set sf_prefix_snort3 to snort install path
-* (optional) set snort_build_dir to snort build working directory path
-* (optional) set concurrency to number of parallel jobs. This value will be set to number of processors if left blank.
-* set dependencies to dependencies (libdaq, abcip, cpputest etc.) installation path
+* set `sf_prefix_snort3` to snort install path
+* (optional) set `snort_build_dir` to snort build working directory path
+* (optional) set `concurrency` to number of parallel jobs. This value will be set to number of processors if left blank.
+* set `dependencies` to dependencies (libdaq, abcip, cpputest etc.) installation path.
+
 The dependency directory structure should be like below:
+```
     dependency_directory
     |
     +- abcip
@@ -34,7 +36,7 @@ The dependency directory structure should be like below:
     +- safec
        +- include
        +- lib
-
+```
 You should now see the below items in status bar:
 
 ![status bar items](img/status-items.png)
