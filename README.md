@@ -45,7 +45,7 @@ Clicking on the icons will trigger the below commands respectively. The icons wi
 
 ## Commands
 
-This extension provides two comaands:
+This extension provides two commands:
 * build: configure snort3
 * build: build snort3
 
