@@ -49,6 +49,13 @@
     "workspaceContains:snort.pc.in"
   ],
   "contributes": {
+    "keybindings": [
+      {
+        "command": "snort3BuildTools.build",
+        "key": "shift+ctrl+b",
+        "when": "snort3BuildTools:enabled"
+      }
+    ],
     "commands": [
       {
         "command": "snort3BuildTools.configure",
