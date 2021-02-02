@@ -3,34 +3,51 @@ import * as fs from 'fs';
 import {snort3BuildTools} from './build_tools';
 import {cpus} from 'os';
 
-export function get_concurrency():number{
+
+const snort3_ws_root:vscode.WorkspaceFolder[] = [];
+
+export function get_concurrency():number {
     const new_concur = <number>(vscode.workspace.getConfiguration('snort3BuildTools').get('concurrency'));
     if(new_concur) return new_concur;
     else return cpus().length;
 }
+
+function get_snort3_src_path():string {
+    if(snort3_ws_root.length) return snort3_ws_root[0].uri.path; //only support single snort3 folder now
+    return "";
+}
+
+function get_sf_prefix_snort3():string {
+    return <string>(vscode.workspace.getConfiguration('snort3BuildTools').get('sf_prefix_snort3'));
+}
+
+function get_dependencies():string {
+    return <string>(vscode.workspace.getConfiguration('snort3BuildTools').get('dependencies'));
+}
+
 export async function activate(context: vscode.ExtensionContext) {
     const status_priority:number = 501;
-    if(!vscode.workspace.workspaceFolders)
-     return;
-    const snort3_ws_root:vscode.WorkspaceFolder[] = [];
+    let api = {
+        get_snort3_src_path:get_snort3_src_path,
+        get_sf_prefix_snort3:get_sf_prefix_snort3,
+        get_dependencies:get_dependencies,
+        get_status_priority():number{ return status_priority;},
+        get_concurrency:get_concurrency
+
+    };
+    if(!vscode.workspace.workspaceFolders) return api;
+    
     for (const workspaceFolder of vscode.workspace.workspaceFolders)
     {
         try{
             fs.accessSync(workspaceFolder.uri.path + '/snort.pc.in', fs.constants.R_OK);
             snort3_ws_root.push(workspaceFolder);
         } catch {
-            
+            //NOOP
         }
     }
-    if(!snort3_ws_root.length) return;
-    let api = {
-        get_snort3_src_path():string{return snort3_ws_root[0].uri.path;}, //only support single snort3 folder now
-        get_sf_prefix_snort3():string{return <string>(vscode.workspace.getConfiguration('snort3BuildTools').get('sf_prefix_snort3'));},
-        get_dependencies():string{return <string>(vscode.workspace.getConfiguration('snort3BuildTools').get('dependencies'));},
-        get_status_priority():number{ return status_priority;},
-        get_concurrency:get_concurrency
-
-    };
+    if(!snort3_ws_root.length) return api;
+    
     const build_tools = new snort3BuildTools();
     const myStatusBarItems:vscode.StatusBarItem[]=[];
     myStatusBarItems.push(vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,status_priority+4));
