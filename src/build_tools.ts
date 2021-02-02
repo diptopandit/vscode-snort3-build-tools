@@ -23,17 +23,18 @@ class snort3BuildToolsTerminal
     private cp:child_process.ChildProcess|undefined = undefined;
     public onDidWrite:vscode.Event<string>;
     private writer:vscode.EventEmitter<string>;
-    private static term_id:number=0;
+    private static term_count:number=0;
+    private term_id:number;
     constructor( private readonly task:string, private readonly statusItem:vscode.StatusBarItem,
         private readonly status_text:string, private readonly cmd:string, private readonly args:string[],
-        private readonly options:child_process.SpawnOptions, private readonly parent:any
-        )
+        private readonly options:child_process.SpawnOptions, private readonly parent:any)
     {
         this.writer = new vscode.EventEmitter<string>();
         this.onDidWrite = this.writer.event;
-        snort3BuildToolsTerminal.term_id++;
+        snort3BuildToolsTerminal.term_count++;
+        this.term_id = snort3BuildToolsTerminal.term_count
     }
-    get_term_id():number { return snort3BuildToolsTerminal.term_id;}
+    get_term_id():number { return this.term_id;}
     async open() {
         this.writer.fire('*** Starting '+this.task+' snort3 task ***\r\n');
         this.statusItem.text=`$(`+this.status_text+`~spin)`;
@@ -69,8 +70,8 @@ class snort3BuildToolsTerminal
     }
 
     async handleInput() {
-        if(snort3BuildToolsTerminal.term_id)
-            this.parent.dispose_terminal(snort3BuildToolsTerminal.term_id);
+        if(this.term_id)
+            this.parent.dispose_terminal(this.term_id);
     }
 }
 
