@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
-import {myStatusBarItems, get_concurrency} from './main';
+import {get_concurrency} from './main';
 
 const formatText = (text: string) => `\r${text.split(/(\r?\n)/g).join("\r")}\r`;
 
@@ -18,19 +18,78 @@ function get_config(){
     return {dependency_path:dependency_path, sf_prefix_snort3:sf_prefix_snort3, snort3_build_dir:snort3_build_dir, env:config_env};
 }
 
-export const snort3BuildTools = {
-    busy:false,
-    async configure(workspace:vscode.WorkspaceFolder)
+class snort3BuildToolsTerminal
+{
+    private cp:child_process.ChildProcess|undefined = undefined;
+    public onDidWrite:vscode.Event<string>;
+    private writer:vscode.EventEmitter<string>;
+    private static term_id:number=0;
+    constructor( private readonly task:string, private readonly statusItem:vscode.StatusBarItem,
+        private readonly status_text:string, private readonly cmd:string, private readonly args:string[],
+        private readonly options:child_process.SpawnOptions, private readonly parent:any
+        )
     {
-        var terminal:vscode.Terminal;
-        if(this.busy) {
-            terminal!.dispose();
-            return;
+        this.writer = new vscode.EventEmitter<string>();
+        this.onDidWrite = this.writer.event;
+        snort3BuildToolsTerminal.term_id++;
+    }
+    get_term_id():number { return snort3BuildToolsTerminal.term_id;}
+    async open() {
+        this.writer.fire('*** Starting '+this.task+' snort3 task ***\r\n');
+        this.statusItem.text=`$(`+this.status_text+`~spin)`;
+        this.cp = child_process.spawn(this.cmd,this.args, this.options);
+        if(!this.cp || !this.cp.pid) {
+            this.writer.fire('**** ERROR starting '+this.task+' task ****\r\n');
+            this.statusItem.text=this.status_text;
+            this.parent.busy = false;
         }
+        this.cp!.stdout!.setEncoding('utf8');
+        this.cp!.stderr!.setEncoding('utf8');
+        this.cp!.stderr!.on('data',(data)=>{
+            this.writer.fire(formatText(data));
+        });
+        this.cp!.stdout!.on('data',(data)=>{
+            this.writer.fire(formatText(data));
+        });
+        this.cp!.once('exit',()=>{
+            this.writer.fire('**** '+this.task+' task complete ****\n\rPress eny key to close this terminal\r\n');
+            this.cp = undefined;
+            this.statusItem.text=`$(`+this.status_text+`)`;
+            this.parent.busy = false;
+        });
+    }
+
+    async close() {
+        if(this.cp){
+            this.cp.kill("SIGKILL");
+            this.cp = undefined;
+        }
+        this.statusItem.text=`$(`+this.status_text+`)`;
+        this.parent.busy = false;
+    }
+
+    async handleInput() {
+        if(snort3BuildToolsTerminal.term_id)
+            this.parent.dispose_terminal(snort3BuildToolsTerminal.term_id);
+    }
+}
+
+export class snort3BuildTools {
+    public busy:boolean =  false;
+    public terminals:Map<number,vscode.Terminal>= new Map<number,vscode.Terminal>();
+
+    dispose_terminal(term_id:number){
+        this.terminals.get(term_id)!.dispose();
+    }
+
+    async dispose() {
+        this.terminals.forEach((terminal)=>{terminal.dispose();});
+    }
+
+    async configure(workspace:vscode.WorkspaceFolder, status_item:vscode.StatusBarItem)
+    {
+        if(this.busy) return;
         this.busy = true;
-        myStatusBarItems[1].text=`$(tools~spin)`
-        const writeEmitter = new vscode.EventEmitter<string>();
-        var cp:child_process.ChildProcess|undefined = undefined;
         let config = get_config();
         let config_args:string[] = [];
         config_args.push("--with-daq-includes="+config.dependency_path+"/libdaq/include");
@@ -53,60 +112,16 @@ export const snort3BuildTools = {
         config.env.CFLAGS = "-O0";
         config.env.CXXFLAGS = "-O0";
         config.env.CPPFLAGS = "-Wall -Wextra -pedantic -Wformat -Wformat-security -Wno-deprecated-declarations -Wno-long-long -Wmissing-noreturn -Wunreachable-code -Wno-address-of-packed-member -DREG_TEST";
-        
-        const pty = {
-            onDidWrite: writeEmitter.event,
-            open: async () => {
-                writeEmitter.fire('*** Configuring snort3 ***\r\n');
-                cp = child_process.spawn('./configure_cmake.sh',config_args, {cwd:workspace.uri.path, env:config.env});
-                if(!cp || !cp.pid) {
-                    writeEmitter.fire('**** ERROR starting configure task ****\r\n');
-                    myStatusBarItems[1].text=`$(tools)`;
-                    this.busy = false;
-                }
-                cp!.stdout!.setEncoding('utf8');
-                cp!.stderr!.setEncoding('utf8');
-                cp!.stderr!.on('data',(data)=>{
-                    writeEmitter.fire(formatText(data));
-                });
-                cp!.stdout!.on('data',(data)=>{
-                    writeEmitter.fire(formatText(data));
-                });
-                cp!.once('exit',()=>{
-                    writeEmitter.fire('**** Configure task complete ****\n\rPress eny key to close this terminal\r\n');
-                    cp = undefined;
-                    myStatusBarItems[1].text=`$(tools)`;
-                    this.busy = false;
-                });
-            },
-            close: async () => {
-                if(cp){
-                    cp.kill("SIGKILL");
-                    cp = undefined;
-                }
-                myStatusBarItems[1].text=`$(tools)`;
-                this.busy = false;
-            },
-            handleInput:()=>{
-                if(!this.busy && terminal) terminal.dispose();
-            }
-        };
-
-        terminal = (<any>vscode.window).createTerminal({name:`Configure : Snort3 Build Tools`, pty:pty});
+        const pty = new snort3BuildToolsTerminal('configure', status_item,`tools`,'./configure_cmake.sh',config_args,{cwd:workspace.uri.path, env:config.env},this);
+        const terminal = (<any>vscode.window).createTerminal({name:`Configure : Snort3 Build Tools`, pty:pty});
+        this.terminals.set(pty.get_term_id(), terminal);
         terminal.show();
-    },
+    }
 
-    async build(workspace:vscode.WorkspaceFolder)
+    async build(workspace:vscode.WorkspaceFolder, status_item:vscode.StatusBarItem)
     {
-        var terminal:vscode.Terminal;
-        if(this.busy) {
-            terminal!.dispose();
-            return;
-        }
+        if(this.busy) return;
         this.busy = true;
-        myStatusBarItems[2].text=`$(settings-gear~spin)`
-        const writeEmitter = new vscode.EventEmitter<string>();
-        var cp:child_process.ChildProcess|undefined = undefined;
         let config = get_config();
         const concurrency = '-j'+get_concurrency().toString();
         var build_dir = workspace.uri.path+'/build';
@@ -115,46 +130,9 @@ export const snort3BuildTools = {
         let config_args:string[] = [];
         config_args.push(concurrency);
         config_args.push("install");
-        const pty = {
-            onDidWrite: writeEmitter.event,
-            open: async () => {
-                writeEmitter.fire('*** Building snort3 ***\r\n');
-                writeEmitter.fire('make '+concurrency+' install\r\n')
-                cp = child_process.spawn('make',config_args, {cwd:build_dir, env:config.env});
-                if(!cp || !cp.pid){
-                    writeEmitter.fire('**** ERROR starting build task ****\r\n');
-                    myStatusBarItems[2].text=`$(settings-gear)`;
-                    this.busy = false;
-                    return;
-                }
-                cp!.stdout!.setEncoding('utf8');
-                cp!.stderr!.setEncoding('utf8');
-                cp!.stderr!.on('data',(data)=>{
-                    writeEmitter.fire(formatText(data));
-                });
-                cp!.stdout!.on('data',(data)=>{
-                    writeEmitter.fire(formatText(data));
-                });
-                cp!.once('exit',()=>{
-                    writeEmitter.fire('**** Build task complete ****\n\rPress eny key to close this terminal\r\n');
-                    cp = undefined;
-                    myStatusBarItems[2].text=`$(settings-gear)`;
-                    this.busy = false;
-                });
-            },
-            close: async () => {
-                if(cp){
-                    cp.kill("SIGKILL");
-                    cp = undefined;
-                }
-                myStatusBarItems[2].text=`$(settings-gear)`;
-                this.busy = false;
-            },
-            handleInput:()=>{
-                if(!this.busy && terminal) terminal.dispose();
-            }
-        };
-        terminal = (<any>vscode.window).createTerminal({name:`Make : Snort3 Build Tools`, pty:pty});
+        const pty = new snort3BuildToolsTerminal('build', status_item,`settings-gear`,'make',config_args,{cwd:build_dir, env:config.env},this);
+        const terminal = (<any>vscode.window).createTerminal({name:`Make : Snort3 Build Tools`, pty:pty});
+        this.terminals.set(pty.get_term_id(), terminal);
         terminal.show();
     }
 }
