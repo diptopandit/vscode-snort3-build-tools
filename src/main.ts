@@ -78,6 +78,9 @@ export async function activate(context: vscode.ExtensionContext) {
         'snort3BuildTools.configure', (ws:vscode.WorkspaceFolder= snort3_ws_root[0])=>{
             build_tools.configure(ws, myStatusBarItems[1].text, myStatusBarItems[2])}));
     context.subscriptions.push(vscode.commands.registerCommand(
+        'snort3BuildTools.clean', (ws:vscode.WorkspaceFolder= snort3_ws_root[0])=>{
+            build_tools.clean(ws, myStatusBarItems[1].text, myStatusBarItems[3])}));
+    context.subscriptions.push(vscode.commands.registerCommand(
         'snort3BuildTools.build', (ws:vscode.WorkspaceFolder= snort3_ws_root[0])=>{
             build_tools.build(ws, myStatusBarItems[1].text, myStatusBarItems[3])}));
     context.subscriptions.push(vscode.commands.registerCommand(

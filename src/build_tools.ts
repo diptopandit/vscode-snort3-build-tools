@@ -149,6 +149,36 @@ export class snort3BuildTools {
         terminal.show();
     }
 
+    async clean(workspace:vscode.WorkspaceFolder, target:string, status_item:vscode.StatusBarItem)
+    {
+        if(this.active_job.running){
+            if(this.active_job.type === 'BUILD'){
+                const resp = await vscode.window.showWarningMessage("Do you want to abort the build?",...["Yes","No"]);
+                if(resp === "Yes"){
+                    this.terminals.get(this.active_job.term_id)!.dispose();
+                } 
+            }
+            return;
+        }
+        this.active_job.running = true;
+        this.active_job.type = 'BUILD';
+        let config = get_config();
+        var build_dir = workspace.uri.path+'/build';
+        if(config.snort3_build_dir && config.snort3_build_dir !== "")
+            build_dir = config.snort3_build_dir;
+        const pty = new snort3BuildToolsTerminal('clean', status_item,statusIcon.build,'make',
+            ['clean'], {cwd:build_dir, env:config.env},
+            (status:string)=>{
+                this.active_job={running:false,term_id:0, type:''};
+                this.active_job.term_id=0;
+            }, this.terminals);
+        const terminal = (<any>vscode.window).createTerminal({name:'Clean : Snort3 Build Tools', pty:pty});
+        const term_id = pty.get_term_id();
+        this.terminals.set(term_id, terminal);
+        this.active_job.term_id = term_id;
+        terminal.show();
+    }
+
     async build(workspace:vscode.WorkspaceFolder, target:string, status_item:vscode.StatusBarItem)
     {
         if(this.active_job.running){
@@ -171,16 +201,16 @@ export class snort3BuildTools {
         var build_dir = workspace.uri.path+'/build';
         if(config.snort3_build_dir && config.snort3_build_dir !== "")
             build_dir = config.snort3_build_dir;
-        let config_args:string[] = [];
-        config_args.push(concurrency);
-        config_args.push("install");
+        let build_args:string[] = [];
+        build_args.push(concurrency);
+        build_args.push("install");
         const pty = new snort3BuildToolsTerminal('build', status_item,statusIcon.build,'make',
-            config_args, {cwd:build_dir, env:config.env},
+            build_args, {cwd:build_dir, env:config.env},
             (status:string)=>{
                 this.active_job={running:false,term_id:0, type:''};
                 this.active_job.term_id=0;
             }, this.terminals);
-        const terminal = (<any>vscode.window).createTerminal({name:`Make : Snort3 Build Tools`, pty:pty});
+        const terminal = (<any>vscode.window).createTerminal({name:'Make : Snort3 Build Tools', pty:pty});
         const term_id = pty.get_term_id();
         this.terminals.set(term_id, terminal);
         this.active_job.term_id = term_id;
@@ -191,7 +221,7 @@ export class snort3BuildTools {
         const targets:snort3BuildTarget[]=[];
         targets.push({label:'REG_TEST', description:'Regression test', detail:'Configure project to build and run regression tests'});
         targets.push({label:'OPEN_SRC', description:'Open Source', detail:'Configure project to build opensource code'});
-        targets.push({label:'PROD_BLD', description:'Product build', detail:'Configure project to build for product'});
+        //targets.push({label:'PROD_BLD', description:'Product build', detail:'Configure project to build for product'});
         return targets;
     }
 }

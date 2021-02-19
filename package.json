@@ -61,6 +61,11 @@
         "when": "snort3BuildTools:enabled"
       },
       {
+        "command": "snort3BuildTools.clean",
+        "key": "shift+ctrl+l",
+        "when": "snort3BuildTools:enabled"
+      },
+      {
         "command": "snort3BuildTools.setTarget",
         "key": "shift+ctrl+t",
         "when": "snort3BuildTools:enabled"
@@ -70,20 +75,17 @@
       {
         "command": "snort3BuildTools.configure",
         "title": "configure snort3",
-        "category": "build",
-        "icon": {
-          "light": "path/to/light/icon.svg",
-          "dark": "path/to/dark/icon.svg"
-        }
+        "category": "build"
       },
       {
         "command": "snort3BuildTools.build",
         "title": "build snort3",
-        "category": "build",
-        "icon": {
-          "light": "path/to/light/icon.svg",
-          "dark": "path/to/dark/icon.svg"
-        }
+        "category": "build"
+      },
+      {
+        "command": "snort3BuildTools.clean",
+        "title": "clean snort3 build",
+        "category": "build"
       }
     ],
     "configuration": {
