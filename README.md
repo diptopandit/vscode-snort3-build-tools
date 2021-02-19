@@ -9,11 +9,14 @@ Snort3 Build Tools is a visual studio code extension that lets you configure and
 
 ## Configuration
 
+_The extension configurations are best suited for workspace. Make sure to modify them in workspace scope._
+
 * open extension settings 
-* set `sf_prefix_snort3` to snort install path
-* (optional) set `snort_build_dir` to snort build working directory path
-* (optional) set `concurrency` to number of parallel jobs. This value will be set to number of processors if left blank.
-* set `dependencies` to dependencies (libdaq, abcip, cpputest etc.) installation path.
+* set `Snort Install Dir` to snort install path
+* (optional) set `Snort Build Dir` to snort build working directory path
+* (optional) set `Concurrency` to number of parallel jobs. This value will be set to number of processors if left blank.
+* (optional) choose `Default Target` from 'REG_TEST' and 'OPEN_SRC'. Default is 'REG_TEST'.
+* set `Dependencies` to dependencies (libdaq, abcip, cpputest etc.) installation path.
 
 The dependency directory structure should be like below:
 ```
@@ -45,10 +48,27 @@ Clicking on the icons will trigger the below commands respectively. The icons wi
 
 ## Commands
 
-This extension provides two commands:
+This extension provides three commands:
 * build: configure snort3
 * build: build snort3
+* build: clean snort3 build
 
 ![registered commands](https://raw.githubusercontent.com/diptopandit/vscode-snort3-build-tools/main/img/commands.png)
 
-Contributions are welcome
+## Key bindings
+
+The following default key bindings are provided, which can be modified as per convenience
+* `^ + ⇧ + c` Configure selected target
+* `^ + ⇧ + b` Build selected target
+* `^ + ⇧ + l` Clean
+* `^ + ⇧ + t` Select target
+
+## Contributing
+
+We encourange to find and submit issues. Please provide enogh information while submitting new issues, including but not limited to 'Repro Steps', 'Expected Behavour' and 'Actual Behaviour'.
+
+- For enhancements, please create issue and get it approved before submitting pull requests.
+- Please mention issue number in pull requests
+
+Contributions are most welcome.
+
