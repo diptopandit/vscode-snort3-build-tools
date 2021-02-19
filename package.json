@@ -54,6 +54,16 @@
         "command": "snort3BuildTools.build",
         "key": "shift+ctrl+b",
         "when": "snort3BuildTools:enabled"
+      },
+      {
+        "command": "snort3BuildTools.configure",
+        "key": "shift+ctrl+c",
+        "when": "snort3BuildTools:enabled"
+      },
+      {
+        "command": "snort3BuildTools.setTarget",
+        "key": "shift+ctrl+t",
+        "when": "snort3BuildTools:enabled"
       }
     ],
     "commands": [
