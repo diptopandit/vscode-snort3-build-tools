@@ -80,25 +80,36 @@
       "type": "object",
       "title": "Snort3 Build Tools",
       "properties": {
-        "snort3BuildTools.sf_prefix_snort3": {
+        "snort3BuildTools.snortInstallDir": {
+          "title": "Snort install directory",
           "description": "absolute path to the snort install directory",
           "type": "string",
           "scope": "resource"
         },
         "snort3BuildTools.dependencies": {
+          "title": "Dependencies directory",
           "description": "absolute path to the dependencies directory",
           "type": "string",
           "scope": "resource"
         },
         "snort3BuildTools.concurrency": {
+          "title": "Concurrency",
           "description": "number of concurrent jobs (defaults to number of processors)",
           "type": "integer",
           "scope": "resource"
         },
-        "snort3BuildTools.snort_build_dir": {
+        "snort3BuildTools.snortBuildDir": {
+          "title": "Snort3 build directory",
           "description": "absolute path to snort build working directory",
           "type": "string",
           "scope": "resource"
+        },
+        "snort3BuildTools.defaultTarget":{
+          "description": "Default build target",
+          "type": "string",
+          "scope": "resource",
+          "default":"REG_TEST",
+          "enum": ["REG_TEST", "OPEN_SRC"]
         }
       }
     }

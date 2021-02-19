@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import {snort3BuildTools} from './build_tools';
+import {snort3BuildTools, statusIcon, snort3BuildTarget} from './build_tools';
 import {cpus} from 'os';
 
 
@@ -18,7 +18,7 @@ function get_snort3_src_path():string {
 }
 
 function get_sf_prefix_snort3():string {
-    return <string>(vscode.workspace.getConfiguration('snort3BuildTools').get('sf_prefix_snort3'));
+    return <string>(vscode.workspace.getConfiguration('snort3BuildTools').get('snortInstallDir'));
 }
 
 function get_dependencies():string {
@@ -42,36 +42,53 @@ export async function activate(context: vscode.ExtensionContext) {
         try{
             fs.accessSync(workspaceFolder.uri.path + '/snort.pc.in', fs.constants.R_OK);
             snort3_ws_root.push(workspaceFolder);
+            break;
         } catch {
             //NOOP
         }
     }
     if(!snort3_ws_root.length) return api;
-    
-    const build_tools = new snort3BuildTools();
+    const stored_target = context.workspaceState.get<snort3BuildTarget>('target');
+    var target_label = vscode.workspace.getConfiguration('snort3BuildTools').get<string>('defaultTarget');
+    if(!target_label) target_label = 'REG_TEST';
+    if(stored_target) target_label = stored_target.label;
+    const build_tools = new snort3BuildTools(stored_target);
     const myStatusBarItems:vscode.StatusBarItem[]=[];
+    myStatusBarItems.push(vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,status_priority+5));
     myStatusBarItems.push(vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,status_priority+4));
     myStatusBarItems.push(vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,status_priority+3));
     myStatusBarItems.push(vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,status_priority+2));
     myStatusBarItems.push(vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,status_priority));
-    myStatusBarItems[0].text=`Snort3 tools [`;
-    myStatusBarItems[1].text=`$(tools)`;
-    myStatusBarItems[1].tooltip='Configure snort3';
-    myStatusBarItems[1].command='snort3BuildTools.configure';
-    myStatusBarItems[2].text = '$(settings-gear)';
-    myStatusBarItems[2].tooltip='Build snort3';
-    myStatusBarItems[2].command='snort3BuildTools.build'
-    myStatusBarItems[3].text=`]`;
+    myStatusBarItems[0].text='Snort3 tools [';
+    myStatusBarItems[1].text = target_label;
+    myStatusBarItems[1].tooltip = 'snort3 build target';
+    myStatusBarItems[1].command = 'snort3BuildTools.setTarget';
+    myStatusBarItems[2].text='$('+statusIcon.configure+')';
+    myStatusBarItems[2].tooltip='Configure snort3';
+    myStatusBarItems[2].command='snort3BuildTools.configure';
+    myStatusBarItems[3].text = '$('+statusIcon.build+')';
+    myStatusBarItems[3].tooltip='Build snort3';
+    myStatusBarItems[3].command='snort3BuildTools.build'
+    myStatusBarItems[4].text=`]`;
     for(const index in myStatusBarItems){
         context.subscriptions.push(myStatusBarItems[index]);
         myStatusBarItems[index].show();
     }
     context.subscriptions.push(vscode.commands.registerCommand(
         'snort3BuildTools.configure', (ws:vscode.WorkspaceFolder= snort3_ws_root[0])=>{
-            build_tools.configure(ws, myStatusBarItems[1])}));
+            build_tools.configure(ws, myStatusBarItems[1].text, myStatusBarItems[2])}));
     context.subscriptions.push(vscode.commands.registerCommand(
         'snort3BuildTools.build', (ws:vscode.WorkspaceFolder= snort3_ws_root[0])=>{
-            build_tools.build(ws, myStatusBarItems[2])}));
+            build_tools.build(ws, myStatusBarItems[1].text, myStatusBarItems[3])}));
+    context.subscriptions.push(vscode.commands.registerCommand(
+        'snort3BuildTools.setTarget', ()=>{
+            vscode.window.showQuickPick<snort3BuildTarget>(snort3BuildTools.getTargets()).then((selection)=>{
+                if(selection){
+                    myStatusBarItems[1].text = selection.label;
+                    context.workspaceState.update('target',selection);
+                }
+            })
+        }));
     context.subscriptions.push(build_tools);
     vscode.commands.executeCommand('setContext', 'snort3BuildTools:enabled', true);
     return api;
