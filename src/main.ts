@@ -1,16 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as buildToolsUtils from './build_tools_utils';
 import {snort3BuildTools, statusIcon, snort3BuildTarget} from './build_tools';
-import {cpus} from 'os';
-
 
 const snort3_ws_root:vscode.WorkspaceFolder[] = [];
-
-export function get_concurrency():number {
-    const new_concur = <number>(vscode.workspace.getConfiguration('snort3BuildTools.environment').get('concurrency'));
-    if(new_concur) return new_concur;
-    else return cpus().length;
-}
 
 function get_snort3_src_path():string {
     if(snort3_ws_root.length) return snort3_ws_root[0].uri.path; //only support single snort3 folder now
@@ -18,11 +11,11 @@ function get_snort3_src_path():string {
 }
 
 function get_sf_prefix_snort3():string {
-    return <string>(vscode.workspace.getConfiguration('snort3BuildTools.environment').get('snortInstallDir'));
+    return buildToolsUtils.get_install_dir();
 }
 
 function get_dependencies():string {
-    return <string>(vscode.workspace.getConfiguration('snort3BuildTools.environment').get('dependenciesDir'));
+    return buildToolsUtils.get_dependencies();
 }
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -32,7 +25,7 @@ export async function activate(context: vscode.ExtensionContext) {
         get_sf_prefix_snort3:get_sf_prefix_snort3,
         get_dependencies:get_dependencies,
         get_status_priority():number{ return status_priority;},
-        get_concurrency:get_concurrency
+        get_concurrency:buildToolsUtils.get_concurrency
 
     };
     if(!vscode.workspace.workspaceFolders) return api;
@@ -49,7 +42,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }
     if(!snort3_ws_root.length) return api;
     const stored_target = context.workspaceState.get<snort3BuildTarget>('target');
-    var target_label = vscode.workspace.getConfiguration('snort3BuildTools').get<string>('defaultTarget');
+    var target_label = buildToolsUtils.get_default_target();
     if(!target_label) target_label = 'REG_TEST';
     if(stored_target) target_label = stored_target.label;
     const build_tools = new snort3BuildTools(stored_target);
