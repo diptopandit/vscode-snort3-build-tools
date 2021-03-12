@@ -1,134 +1,9 @@
 import * as vscode from 'vscode';
-import * as child_process from 'child_process';
-import {get_concurrency} from './main';
-
+import * as buildToolsUtils from './build_tools_utils';
+import {snort3BuildToolsTerminal} from './build_tools_terminal';
 
 export const statusIcon = {configure:'tools', build:'settings-gear'};
-
 export interface snort3BuildTarget extends vscode.QuickPickItem{};
-
-const formatText = (text: string) => `\r${text.split(/(\r?\n)/g).join("\r")}\r`;
-
-interface buildToolsConfigOptions {
-    sanitiser:{enabled:boolean, type?:string},
-    debug:boolean,
-    debug_msg:boolean,
-    shell:boolean,
-    app_id:boolean,
-    piglet:boolean,
-    coverage:boolean
-}
-
-interface buildToolsConfig {
-    log:boolean,
-    dependency_path:string,
-    sf_prefix_snort3:string,
-    snort3_build_dir:string,
-    env:any,
-    options?:buildToolsConfigOptions
-}
-
-function get_config(include_options:boolean = false):buildToolsConfig
-{
-    let current_config:buildToolsConfig = {
-        log : <boolean>vscode.workspace.getConfiguration('snort3BuildTools').get('logCommands'),
-        dependency_path : <string>vscode.workspace.getConfiguration('snort3BuildTools.environment').get('dependenciesDir'),
-        sf_prefix_snort3 : <string>vscode.workspace.getConfiguration('snort3BuildTools.environment').get('snortInstallDir'),
-        snort3_build_dir : <string>vscode.workspace.getConfiguration('snort3BuildTools.environment').get('snortBuildDir'),
-        env : Object.assign({},process.env)
-    };
-
-    current_config.env.PATH = current_config.env.PATH! + ':' + current_config.dependency_path + '/libdaq/bin';
-    current_config.env.PKG_CONFIG_PATH = /*current_config.env.PKG_CONFIG_PATH! + ':' +*/
-        current_config.dependency_path + '/cpputest/lib64/pkgconfig:' + current_config.dependency_path +
-        '/safec/lib/pkgconfig';
-    current_config.env.LD_LIBRARY_PATH = /*current_config.env.LD_LIBRARY_PATH! + ':' +*/
-        current_config.dependency_path + '/cpputest/lib64:' + current_config.dependency_path +
-        '/libdaq/lib:' + current_config.dependency_path + '/safec/lib';
-    current_config.env.LUA_PATH = current_config.sf_prefix_snort3 + '/include/snort/lua/\\?.lua\\;\\;';
-    current_config.env.SNORT_LUA_PATH = current_config.sf_prefix_snort3 + '/etc/snort';
-    current_config.env.SNORT_PLUGIN_PATH = current_config.sf_prefix_snort3 + '/lib64';
-    
-    if(include_options)
-    {
-        current_config.options = {
-            sanitiser : {enabled:<boolean>vscode.workspace.getConfiguration('snort3BuildTools.configOption').get('enableSanitiser')},
-            debug : <boolean>vscode.workspace.getConfiguration('snort3BuildTools.configOption').get('enableDebug'),
-            debug_msg : <boolean>vscode.workspace.getConfiguration('snort3BuildTools.configOption').get('debugMessage'),
-            shell : <boolean>vscode.workspace.getConfiguration('snort3BuildTools.configOption').get('enableShell'),
-            app_id : <boolean>vscode.workspace.getConfiguration('snort3BuildTools.configOption').get('enableAppId'),
-            piglet : <boolean>vscode.workspace.getConfiguration('snort3BuildTools.configOption').get('enablePiglet'),
-            coverage : <boolean>vscode.workspace.getConfiguration('snort3BuildTools.configOption').get('enableCodeCoverage')
-        };
-
-        if(current_config.options.sanitiser.enabled)
-            current_config.options.sanitiser.type = <string>vscode.workspace.getConfiguration('snort3BuildTools.configOption').get('sanitiser');
-    }
-    return current_config;
-}
-
-class snort3BuildToolsTerminal
-{
-    private cp:child_process.ChildProcess|undefined = undefined;
-    public onDidWrite:vscode.Event<string>;
-    private writer:vscode.EventEmitter<string>;
-    private static term_count:number=0;
-    private term_id:number;
-    private wip:boolean = false;
-    constructor( private readonly task:string, private readonly statusItem:vscode.StatusBarItem,
-        private readonly status_text:string, private readonly cmd:string, private readonly args:string[],
-        private readonly options:child_process.SpawnOptions, private readonly cb:(arg0: string) => void,
-        private readonly saved_terminals:Map<number,vscode.Terminal>, private readonly log:boolean)
-    {
-        this.writer = new vscode.EventEmitter<string>();
-        this.onDidWrite = this.writer.event;
-        snort3BuildToolsTerminal.term_count++;
-        this.term_id = snort3BuildToolsTerminal.term_count;
-    }
-    get_term_id():number { return this.term_id;}
-    async open() {
-        this.wip = true;
-        this.writer.fire('*** Starting '+this.task+' snort3 task ***\r\n');
-        this.statusItem.text=`$(`+this.status_text+`~spin)`;
-        if(this.log)
-            this.writer.fire(this.cmd + ' ' + this.args.join(' ') + '\r\n');
-        this.cp = child_process.spawn(this.cmd,this.args, this.options);
-        if(!this.cp || !this.cp.pid) {
-            this.writer.fire('**** ERROR starting '+this.task+' task ****\r\n');
-            this.statusItem.text=`$(`+this.status_text+`)`;
-            this.cb('error');
-            this.wip = false;
-        }
-        this.cp!.stdout!.setEncoding('utf8');
-        this.cp!.stderr!.setEncoding('utf8');
-        this.cp!.stderr!.on('data',(data)=>{
-            this.writer.fire(formatText(data));
-        });
-        this.cp!.stdout!.on('data',(data)=>{
-            this.writer.fire(formatText(data));
-        });
-        this.cp!.once('exit',(code,signal)=>{
-            this.writer.fire('**** '+this.task+' task complete ****\n\rPress eny key to close this terminal\r\n');
-            this.cp = undefined;
-            this.statusItem.text=`$(`+this.status_text+`)`;
-            if(code||signal) this.cb('error');
-            else this.cb('success');
-            this.wip = false;
-        });
-    }
-
-    async close() {
-        if(this.cp){
-            this.cp.kill("SIGKILL");
-            this.cp = undefined;
-        }
-    }
-
-    async handleInput() {
-        if(this.term_id && !this.wip)
-            this.saved_terminals.get(this.term_id)!.dispose();
-    }
-}
 
 export class snort3BuildTools {
     private active_job = {running:false, term_id:0, type:''};
@@ -159,7 +34,7 @@ export class snort3BuildTools {
         if(target === 'PROD_BLD') return;
         this.active_job.running = true;
         this.active_job.type = 'CONFIG';
-        let config = get_config(true);
+        let config = buildToolsUtils.get_config(true);
         let config_args:string[] = [];
         config_args.push("--with-daq-includes="+config.dependency_path+"/libdaq/include");
         config_args.push("--with-daq-libraries="+config.dependency_path+"/libdaq/lib");
@@ -214,7 +89,7 @@ export class snort3BuildTools {
         }
         this.active_job.running = true;
         this.active_job.type = 'BUILD';
-        let config = get_config();
+        let config = buildToolsUtils.get_config();
         var build_dir = workspace.uri.path+'/build';
         if(config.snort3_build_dir && config.snort3_build_dir !== "")
             build_dir = config.snort3_build_dir;
@@ -248,8 +123,8 @@ export class snort3BuildTools {
         }
         this.active_job.running = true;
         this.active_job.type = 'BUILD';
-        let config = get_config();
-        const concurrency = '-j'+ get_concurrency().toString();
+        let config = buildToolsUtils.get_config();
+        const concurrency = '-j'+ buildToolsUtils.get_concurrency().toString();
         var build_dir = workspace.uri.path+'/build';
         if(config.snort3_build_dir && config.snort3_build_dir !== "")
             build_dir = config.snort3_build_dir;
