@@ -92,36 +92,97 @@
       "type": "object",
       "title": "Snort3 Build Tools",
       "properties": {
-        "snort3BuildTools.snortInstallDir": {
+        "snort3BuildTools.logCommands": {
+          "description": "Show the command being executed",
+          "type": "boolean",
+          "default": false,
+          "scope": "resource"
+        },
+        "snort3BuildTools.environment.snortInstallDir": {
           "title": "Snort install directory",
-          "description": "absolute path to the snort install directory",
+          "description": "Absolute path to the snort install directory",
           "type": "string",
           "scope": "resource"
         },
-        "snort3BuildTools.dependencies": {
+        "snort3BuildTools.environment.dependenciesDir": {
           "title": "Dependencies directory",
-          "description": "absolute path to the dependencies directory",
+          "description": "Absolute path to the dependencies directory",
           "type": "string",
           "scope": "resource"
         },
-        "snort3BuildTools.concurrency": {
+        "snort3BuildTools.environment.snortBuildDir": {
+          "title": "Snort3 build directory",
+          "description": "Absolute path to snort build working directory",
+          "type": "string",
+          "scope": "resource"
+        },
+        "snort3BuildTools.environment.concurrency": {
           "title": "Concurrency",
-          "description": "number of concurrent jobs (defaults to number of processors)",
+          "description": "Number of concurrent jobs (defaults to number of processors)",
           "type": "integer",
           "scope": "resource"
         },
-        "snort3BuildTools.snortBuildDir": {
-          "title": "Snort3 build directory",
-          "description": "absolute path to snort build working directory",
-          "type": "string",
-          "scope": "resource"
-        },
-        "snort3BuildTools.defaultTarget":{
+        "snort3BuildTools.defaultTarget": {
           "description": "Default build target",
           "type": "string",
           "scope": "resource",
-          "default":"REG_TEST",
-          "enum": ["REG_TEST", "OPEN_SRC"]
+          "default": "REG_TEST",
+          "enum": [
+            "REG_TEST",
+            "OPEN_SRC"
+          ]
+        },
+        "snort3BuildTools.configOption.sanitiser": {
+          "description": "Sanitiser to use for regtest if sanitisation is enabled",
+          "type": "string",
+          "scope": "resource",
+          "default": "address",
+          "enum": [
+            "address",
+            "thread"
+          ]
+        },
+        "snort3BuildTools.configOption.enableSanitiser": {
+          "description": "Enable address or thread sanitisation",
+          "type": "boolean",
+          "scope": "resource",
+          "default": true
+        },
+        "snort3BuildTools.configOption.enableDebug": {
+          "description": "Enable debug support (--enable-debug)",
+          "type": "boolean",
+          "scope": "resource",
+          "default": true
+        },
+        "snort3BuildTools.configOption.debugMessage": {
+          "description": "Enable debug messages (--enable-debug-msg)",
+          "type": "boolean",
+          "scope": "resource",
+          "default": true
+        },
+        "snort3BuildTools.configOption.enableShell": {
+          "description": "Enable snort3 shell (--enable-shell)",
+          "type": "boolean",
+          "scope": "resource",
+          "default": true
+        },
+        "snort3BuildTools.configOption.enableAppId": {
+          "description": "Enable third-party AppID (--enable-appid-third-party)",
+          "type": "boolean",
+          "scope": "resource",
+          "default": true
+        },
+        "snort3BuildTools.configOption.enablePiglet": {
+          "description": "Enable piglet (--enable-piglet)",
+          "type": "boolean",
+          "scope": "resource",
+          "default": true
+        },
+        "snort3BuildTools.configOption.enableCodeCoverage": {
+          "description": "Enable code coverage if the target and sanitisation supports (--enable-code-coverage)",
+          "type": "boolean",
+          "scope": "resource",
+          "default": true
         }
       }
     }

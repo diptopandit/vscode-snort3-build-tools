@@ -7,7 +7,7 @@ import {cpus} from 'os';
 const snort3_ws_root:vscode.WorkspaceFolder[] = [];
 
 export function get_concurrency():number {
-    const new_concur = <number>(vscode.workspace.getConfiguration('snort3BuildTools').get('concurrency'));
+    const new_concur = <number>(vscode.workspace.getConfiguration('snort3BuildTools.environment').get('concurrency'));
     if(new_concur) return new_concur;
     else return cpus().length;
 }
@@ -18,11 +18,11 @@ function get_snort3_src_path():string {
 }
 
 function get_sf_prefix_snort3():string {
-    return <string>(vscode.workspace.getConfiguration('snort3BuildTools').get('snortInstallDir'));
+    return <string>(vscode.workspace.getConfiguration('snort3BuildTools.environment').get('snortInstallDir'));
 }
 
 function get_dependencies():string {
-    return <string>(vscode.workspace.getConfiguration('snort3BuildTools').get('dependencies'));
+    return <string>(vscode.workspace.getConfiguration('snort3BuildTools.environment').get('dependenciesDir'));
 }
 
 export async function activate(context: vscode.ExtensionContext) {
