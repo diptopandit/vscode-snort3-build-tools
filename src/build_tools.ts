@@ -31,11 +31,15 @@ export class snort3BuildTools {
             }
             return;
         }
-        if(target === 'PROD_BLD') return;
+        if(target === 'PROD_BLD') {
+            this.configured_target=target;
+            return;
+        }
         this.active_job.running = true;
         this.active_job.type = 'CONFIG';
         let config = buildToolsUtils.get_config(true);
         let config_args:string[] = [];
+        let command = './configure_cmake.sh';
         config_args.push("--with-daq-includes="+config.dependency_path+"/libdaq/include");
         config_args.push("--with-daq-libraries="+config.dependency_path+"/libdaq/lib");
         config_args.push("--prefix="+config.sf_prefix_snort3);
@@ -63,7 +67,7 @@ export class snort3BuildTools {
             config.env.CXXFLAGS = "-O0";
             config.env.CPPFLAGS = "-Wall -Wextra -pedantic -Wformat -Wformat-security -Wno-deprecated-declarations -Wno-long-long -Wmissing-noreturn -Wunreachable-code -Wno-address-of-packed-member -DREG_TEST";
         }
-        const pty = new snort3BuildToolsTerminal('configure', status_item,statusIcon.configure,'./configure_cmake.sh',
+        const pty = new snort3BuildToolsTerminal('configure', status_item,statusIcon.configure,command,
             config_args,{cwd:workspace.uri.path, env:config.env},
             (status:string)=>{
                 this.active_job = {running:false, term_id:0, type:''};
@@ -90,11 +94,22 @@ export class snort3BuildTools {
         this.active_job.running = true;
         this.active_job.type = 'BUILD';
         let config = buildToolsUtils.get_config();
-        var build_dir = workspace.uri.path+'/build';
-        if(config.snort3_build_dir && config.snort3_build_dir !== "")
-            build_dir = config.snort3_build_dir;
-        const pty = new snort3BuildToolsTerminal('clean', status_item,statusIcon.build,'make',
-            ['clean'], {cwd:build_dir, env:config.env},
+        var clean_dir = workspace.uri.path+'/build';
+        let command = 'make';
+        let clean_args = ['clean']
+        if(target === 'PROD_BLD'){
+            let snort3_build = buildToolsUtils.get_snort3_build_ws();
+            if(!snort3_build) return;
+            command = './jailer.sh';
+            clean_args.unshift('make');
+            clean_dir = snort3_build.uri.path;
+            config.env.NONINTERACTIVE = 'TRUE';
+        } else {
+            if(config.snort3_build_dir && config.snort3_build_dir !== "")
+                clean_dir = config.snort3_build_dir;
+        }
+        const pty = new snort3BuildToolsTerminal('clean', status_item,statusIcon.build,command,
+            clean_args, {cwd:clean_dir, env:config.env},
             (status:string)=>{
                 this.active_job={running:false,term_id:0, type:''};
                 this.active_job.term_id=0;
@@ -124,14 +139,27 @@ export class snort3BuildTools {
         this.active_job.running = true;
         this.active_job.type = 'BUILD';
         let config = buildToolsUtils.get_config();
-        const concurrency = '-j'+ buildToolsUtils.get_concurrency().toString();
-        var build_dir = workspace.uri.path+'/build';
-        if(config.snort3_build_dir && config.snort3_build_dir !== "")
-            build_dir = config.snort3_build_dir;
+        let command = 'make';
         let build_args:string[] = [];
-        build_args.push(concurrency);
-        build_args.push("install");
-        const pty = new snort3BuildToolsTerminal('build', status_item,statusIcon.build,'make',
+        var build_dir = workspace.uri.path+'/build';
+
+        if(target === 'PROD_BLD'){
+            let snort3_build = buildToolsUtils.get_snort3_build_ws();
+            if(!snort3_build) return;
+            command = './jailer.sh';
+            build_args.push('make');
+            build_args.push('staging');
+            build_dir = snort3_build.uri.path;
+            config.env.NONINTERACTIVE = 'TRUE';
+        } else {
+            const concurrency = '-j'+ buildToolsUtils.get_concurrency().toString();
+            build_args.push(concurrency);
+            build_args.push('install');
+            if(config.snort3_build_dir && config.snort3_build_dir !== "")
+                build_dir = config.snort3_build_dir;
+        }
+        
+        const pty = new snort3BuildToolsTerminal('build', status_item,statusIcon.build,command,
             build_args, {cwd:build_dir, env:config.env},
             (status:string)=>{
                 this.active_job={running:false,term_id:0, type:''};
@@ -148,7 +176,8 @@ export class snort3BuildTools {
         const targets:snort3BuildTarget[]=[];
         targets.push({label:'REG_TEST', description:'Regression test', detail:'Configure project to build and run regression tests'});
         targets.push({label:'OPEN_SRC', description:'Open Source', detail:'Configure project to build opensource code'});
-        //targets.push({label:'PROD_BLD', description:'Product build', detail:'Configure project to build for product'});
+        if(buildToolsUtils.get_snort3_build_ws())
+            targets.push({label:'PROD_BLD', description:'Product build', detail:'Configure project to build for product'});
         return targets;
     }
 }

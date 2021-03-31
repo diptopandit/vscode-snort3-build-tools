@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import {cpus} from 'os';
+import {accessSync, constants} from 'fs';
 
 interface buildToolsConfigOptions {
     sanitiser:{enabled:boolean, type?:string},
@@ -73,4 +74,17 @@ export function get_concurrency():number {
 
 export function get_default_target():string {
     return <string>vscode.workspace.getConfiguration('snort3BuildTools').get<string>('defaultTarget');
+}
+
+export function get_snort3_build_ws():vscode.WorkspaceFolder|undefined{
+    if(!vscode.workspace.workspaceFolders) return undefined;
+    for (const workspaceFolder of vscode.workspace.workspaceFolders) {
+        try{
+            accessSync(workspaceFolder.uri.path+'/IMSFILES',constants.F_OK);
+            return workspaceFolder;
+        } catch {
+            //NOOP
+        }
+    }
+    return undefined;
 }

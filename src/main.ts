@@ -3,10 +3,10 @@ import * as fs from 'fs';
 import * as buildToolsUtils from './build_tools_utils';
 import {snort3BuildTools, statusIcon, snort3BuildTarget} from './build_tools';
 
-const snort3_ws_root:vscode.WorkspaceFolder[] = [];
+let snort3_ws_root:vscode.WorkspaceFolder;
 
 function get_snort3_src_path():string {
-    if(snort3_ws_root.length) return snort3_ws_root[0].uri.path; //only support single snort3 folder now
+    if(snort3_ws_root) return snort3_ws_root.uri.path; //only support single snort3 folder now
     return "";
 }
 
@@ -34,13 +34,13 @@ export async function activate(context: vscode.ExtensionContext) {
     {
         try{
             fs.accessSync(workspaceFolder.uri.path + '/snort.pc.in', fs.constants.R_OK);
-            snort3_ws_root.push(workspaceFolder);
+            snort3_ws_root = workspaceFolder;
             break;
         } catch {
             //NOOP
         }
     }
-    if(!snort3_ws_root.length) return api;
+    if(!snort3_ws_root) return api;
     const stored_target = context.workspaceState.get<snort3BuildTarget>('target');
     var target_label = buildToolsUtils.get_default_target();
     if(!target_label) target_label = 'REG_TEST';
@@ -63,18 +63,18 @@ export async function activate(context: vscode.ExtensionContext) {
     myStatusBarItems[3].tooltip='Build snort3';
     myStatusBarItems[3].command='snort3BuildTools.build'
     myStatusBarItems[4].text=`]`;
-    for(const index in myStatusBarItems){
-        context.subscriptions.push(myStatusBarItems[index]);
-        myStatusBarItems[index].show();
-    }
+    myStatusBarItems.forEach(item => {
+        context.subscriptions.push(item);
+        item.show();
+    });
     context.subscriptions.push(vscode.commands.registerCommand(
-        'snort3BuildTools.configure', (ws:vscode.WorkspaceFolder= snort3_ws_root[0])=>{
+        'snort3BuildTools.configure', (ws:vscode.WorkspaceFolder= snort3_ws_root)=>{
             build_tools.configure(ws, myStatusBarItems[1].text, myStatusBarItems[2])}));
     context.subscriptions.push(vscode.commands.registerCommand(
-        'snort3BuildTools.clean', (ws:vscode.WorkspaceFolder= snort3_ws_root[0])=>{
+        'snort3BuildTools.clean', (ws:vscode.WorkspaceFolder= snort3_ws_root)=>{
             build_tools.clean(ws, myStatusBarItems[1].text, myStatusBarItems[3])}));
     context.subscriptions.push(vscode.commands.registerCommand(
-        'snort3BuildTools.build', (ws:vscode.WorkspaceFolder= snort3_ws_root[0])=>{
+        'snort3BuildTools.build', (ws:vscode.WorkspaceFolder= snort3_ws_root)=>{
             build_tools.build(ws, myStatusBarItems[1].text, myStatusBarItems[3])}));
     context.subscriptions.push(vscode.commands.registerCommand(
         'snort3BuildTools.setTarget', ()=>{
